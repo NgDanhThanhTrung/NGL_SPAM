@@ -10,11 +10,11 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 app = Flask(__name__)
 
 # ================= CẤU HÌNH =================
-# 1. Dán Token của bạn vào đây
-TELEGRAM_TOKEN = "YOUR_BOT_TOKEN_HERE" 
+# 1. Dán Token thật lấy từ @BotFather vào đây (Ví dụ: "7823456:AAFdgdg...")
+TELEGRAM_TOKEN = "TOKEN" 
 
-# 2. Thông tin bảo mật và định danh
-API_KEY = "ngdanhthanhtrung"
+# 2. Thông tin bảo mật và định danh (Đã cập nhật Key mới của bạn)
+API_KEY = "bomaylanhavua"
 YOUR_CHAT_ID = "7346983056" 
 # ============================================
 
@@ -47,7 +47,12 @@ def home(): return "Server NGL is Running!"
 @app.route('/api/ngl/', methods=['GET'])
 def api_handler():
     user, content, key = request.args.get('user'), request.args.get('content'), request.args.get('key')
-    count = int(request.args.get('count', 1))
+    count_raw = request.args.get('count', 1)
+    
+    try:
+        count = int(count_raw)
+    except:
+        count = 1
     
     if key != API_KEY: return jsonify({"status": "error", "msg": "Sai Key"}), 403
     
