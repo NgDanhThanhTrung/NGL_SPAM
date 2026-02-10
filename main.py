@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # ================= CẤU HÌNH =================
 # 1. Dán Token thật lấy từ @BotFather vào đây (Ví dụ: "7823456:AAFdgdg...")
-TELEGRAM_TOKEN = "TOKEN" 
+TELEGRAM_TOKEN = "8315143646:AAEclVBueRJXLipPHl1AjHQHczsH_0L2IzI" 
 
 # 2. Thông tin bảo mật và định danh (Đã cập nhật Key mới của bạn)
 API_KEY = "bomaylanhavua"
