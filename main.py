@@ -3,20 +3,19 @@ import requests
 import time
 import os
 from flask import Flask, request, jsonify
-from telegram import Bot
+# Sửa lỗi ở dòng dưới đây: Thêm Update vào phần import
+from telegram import Update, Bot 
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 app = Flask(__name__)
 
 # ================= CẤU HÌNH =================
+# Thay Token lấy từ @BotFather vào đây
 TELEGRAM_TOKEN = "YOUR_BOT_TOKEN_HERE" 
 API_KEY = "ngdanhthanhtrung"
-# ID của bạn để nhận thông báo hoàn thành
+# ID của bạn để nhận thông báo (Lấy bằng cách chat /start với bot)
 YOUR_CHAT_ID = "YOUR_PERSONAL_CHAT_ID" 
 # ============================================
-
-# Khởi tạo bot để gửi thông báo chủ động
-bot_notifier = Bot(token=TELEGRAM_TOKEN)
 
 def send_ngl_request(username, message):
     url = "https://ngl.link/api/submit"
@@ -36,23 +35,19 @@ def send_ngl_request(username, message):
         return 500
 
 def task_background_spam(username, message, count):
-    """Tiến trình chạy ngầm gửi tin nhắn và báo cáo qua Telegram"""
     success = 0
     for _ in range(count):
         if send_ngl_request(username, message) == 200:
             success += 1
-        time.sleep(0.3) # Delay để không bị NGL block IP server
+        time.sleep(0.3)
     
-    # Gửi thông báo về Telegram khi xong
-    msg = f"✅ **HOÀN THÀNH NHIỆM VỤ**\n\n👤 Mục tiêu: `{username}`\n🚀 Thành công: `{success}/{count}`\n💬 Nội dung: {message}"
+    msg = f"✅ **HOÀN THÀNH NHIỆM VỤ**\n\n👤 Mục tiêu: `{username}`\n🚀 Thành công: `{success}/{count}`"
     try:
-        # Gửi request trực tiếp đến API Telegram để thông báo
         api_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         requests.post(api_url, json={"chat_id": YOUR_CHAT_ID, "text": msg, "parse_mode": "Markdown"})
     except Exception as e:
         print(f"Lỗi gửi thông báo: {e}")
 
-# --- CỔNG HTTP (Dành cho Render và Phím tắt) ---
 @app.route('/')
 def home():
     return "API NGL & Bot Telegram is Running!"
@@ -67,14 +62,10 @@ def api_handler():
     if key != API_KEY:
         return jsonify({"status": "error", "message": "Sai Key"}), 403
 
-    # Kích hoạt luồng ngầm ngay lập tức
     thread = threading.Thread(target=task_background_spam, args=(user, content, count))
     thread.start()
 
-    return jsonify({
-        "status": "processing",
-        "message": f"Đã bắt đầu gửi {count} tin tới {user}. Kết quả sẽ báo qua Telegram."
-    })
+    return jsonify({"status": "processing", "message": "Đang gửi ngầm..."})
 
 # --- CẤU HÌNH BOT TELEGRAM ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -95,17 +86,12 @@ async def ngl_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Cú pháp: `/ngl user | nội dung | số lần`", parse_mode="Markdown")
 
 def run_bot():
-    """Hàm khởi chạy Bot"""
     application = Application.builder().token(TELEGRAM_TOKEN).build()
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("ngl", ngl_command))
     application.run_polling(close_loop=False)
 
-# --- CHẠY SERVER ---
 if __name__ == "__main__":
-    # Khởi chạy Bot Telegram trong luồng riêng
     threading.Thread(target=run_bot, daemon=True).start()
-    
-    # Render yêu cầu dùng cổng PORT từ biến môi trường
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
